@@ -1,0 +1,37 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.test_work/
+.coverage
+htmlcov/
+.idea/
+.vscode/
+.venv/
+.local_deps/
+venv/
+dist/
+build/
+docs/superpowers/
+docs/VALIDATION.zh-CN.md
+docs/validation.json
+
+# Local datasets and generated artifacts
+/data/
+/datasets/
+/outputs/
+/runs/
+/cache/
+/checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npy
+*.npz
+*.log
+
+# Local machine configuration
+.env
+*.local.yaml
+*.local.yml

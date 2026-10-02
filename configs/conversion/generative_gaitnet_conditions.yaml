@@ -1,0 +1,16 @@
+schema_version: 1
+protocol_status: target_generation_schedule_not_historical_simulator_state
+label_map: ../label_map.json
+selection_seed: 20260927
+simulation_seed_base: 20260927
+pathological:
+  start_milli: 600
+  stop_milli: 950
+  step_milli: 1
+  excluded_milli: [870]
+  split_group_counts: {train: 175, val: 87, test: 88}
+normal:
+  start_milli: 951
+  stop_milli: 1000
+  step_milli: 1
+  split_counts: {train: 800, val: 400, test: 400}

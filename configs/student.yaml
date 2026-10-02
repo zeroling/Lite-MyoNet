@@ -1,0 +1,41 @@
+schema_version: 1
+skeleton_config: skeletons/fullbody23.yaml
+label_map: label_map.json
+data:
+  train: ../data/fullbody23/processed/train.npz
+  val: ../data/fullbody23/processed/val.npz
+  test: ../data/fullbody23/processed/test.npz
+output_root: ../runs/fullbody23
+seeds: [2026, 2027, 2028, 2029, 2030]
+epochs: 300
+batch_size: 32
+num_workers: 0
+cpu_threads: 1
+precision: bf16
+deterministic: true
+selection_metric: macro_f1
+model:
+  channels: [32, 64, 128]
+  dropout: 0.05
+  fourier_degree: 2
+teacher:
+  checkpoint: ../runs/fullbody23/teacher_seed_2026/best_teacher.pth
+distillation:
+  kd_temperature: 4.0
+  topology_temperature: 0.2
+  kd_weight: 1.0
+  static_adjacency_weight: 1.0
+  dynamic_similarity_weight: 1.0
+loss:
+  label_smoothing: 0.05
+optimizer:
+  type: AdamW
+  peak_lr: 0.0005
+  weight_decay: 0.0001
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+scheduler:
+  warmup_ratio: 0.1
+  warmup_init_lr: 0.0001
+  warmup_gamma: 1.0
+  decay_gamma: 2.0

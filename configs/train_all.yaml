@@ -1,0 +1,6 @@
+schema_version: 1
+teacher_config: teacher.yaml
+student_config: student.yaml
+output_root: ../runs/train_all
+teacher_seed: 2026
+student_seeds: [2026, 2027, 2028, 2029, 2030]

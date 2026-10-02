@@ -1,0 +1,36 @@
+schema_version: 1
+protocol_status: target_conversion_configuration_not_historical_export_state
+upstream:
+  repository: https://github.com/namjohn10/GenerativeGaitNet
+  commit: eaf3e256925c8b0acc3e95b539535beba105b511
+  license: Apache-2.0
+skeleton_config_path: ../skeletons/fullbody23.yaml
+label_map_path: ../label_map.json
+input_keys:
+  positions: positions
+  timestamps: timestamps
+  body_names: body_names
+  label_names: label_names
+  metadata_json_utf8: metadata_json_utf8
+temporal:
+  target_frames: 120
+  target_rate_hz: 30.0
+  window_start_seconds: null
+  resampling: linear_interpolation
+  rate_basis: target_reconstruction_default_matching_the_upstream_controller_rate
+coordinates:
+  source_units: simulator_native
+  output_units: simulator_native
+  scale_to_output_units: 1.0
+  rotation_matrix:
+    - [1.0, 0.0, 0.0]
+    - [0.0, 1.0, 0.0]
+    - [0.0, 0.0, 1.0]
+  translation: [0.0, 0.0, 0.0]
+  origin_mode: world
+  transform_status: explicit_target_default_not_verified_historical_preprocessing
+output:
+  layout: NCTV
+  dtype: float32
+  labels_dtype: int64
+  include_bones: false

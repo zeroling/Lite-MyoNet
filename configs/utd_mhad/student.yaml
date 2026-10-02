@@ -1,0 +1,40 @@
+schema_version: 1
+skeleton_config: ../skeletons/utd_mhad20.yaml
+label_map: ../label_maps/utd_mhad27.json
+data:
+  train: ../../data/utd_mhad/processed/train.npz
+  val: ../../data/utd_mhad/processed/val.npz
+  test: ../../data/utd_mhad/processed/test.npz
+output_root: ../../runs/utd_mhad
+seeds: [2026, 2027, 2028, 2029, 2030]
+epochs: 300
+batch_size: 32
+num_workers: 0
+cpu_threads: 1
+precision: bf16
+deterministic: true
+selection_metric: macro_f1
+model:
+  channels: [32, 64, 128]
+  dropout: 0.05
+  fourier_degree: 2
+teacher:
+  checkpoint: ../../runs/utd_mhad/teacher_seed_2026/best_teacher.pth
+distillation:
+  kd_temperature: 4.0
+  topology_temperature: 0.2
+  kd_weight: 1.0
+  static_adjacency_weight: 1.0
+  dynamic_similarity_weight: 1.0
+loss:
+  label_smoothing: 0.05
+optimizer:
+  peak_lr: 0.0005
+  weight_decay: 0.0001
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+scheduler:
+  warmup_ratio: 0.1
+  warmup_init_lr: 0.0001
+  warmup_gamma: 1
+  decay_gamma: 2

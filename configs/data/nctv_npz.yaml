@@ -1,0 +1,9 @@
+schema_version: 1
+format: npz
+skeleton_config: ../skeletons/fullbody23.yaml
+joints_key: joints
+labels_key: labels
+array_layout: NCTV
+dtype: float32
+labels_dtype: integer
+persist_bones: false

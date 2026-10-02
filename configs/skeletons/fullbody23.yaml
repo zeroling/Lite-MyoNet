@@ -1,0 +1,86 @@
+schema_version: 1
+skeleton_id: fullbody23_project_v1
+point_count: 23
+root_index: 0
+nodes:
+  - {id: Pelvis, index: 0}
+  - {id: FemurR, index: 1}
+  - {id: TibiaR, index: 2}
+  - {id: TalusR, index: 3}
+  - {id: FootPinkyR, index: 4}
+  - {id: FootThumbR, index: 5}
+  - {id: FemurL, index: 6}
+  - {id: TibiaL, index: 7}
+  - {id: TalusL, index: 8}
+  - {id: FootPinkyL, index: 9}
+  - {id: FootThumbL, index: 10}
+  - {id: Spine, index: 11}
+  - {id: Torso, index: 12}
+  - {id: Neck, index: 13}
+  - {id: Head, index: 14}
+  - {id: ShoulderR, index: 15}
+  - {id: ArmR, index: 16}
+  - {id: ForeArmR, index: 17}
+  - {id: HandR, index: 18}
+  - {id: ShoulderL, index: 19}
+  - {id: ArmL, index: 20}
+  - {id: ForeArmL, index: 21}
+  - {id: HandL, index: 22}
+model_graph_edges:
+  - [11, 0]
+  - [1, 0]
+  - [6, 0]
+  - [2, 1]
+  - [3, 2]
+  - [4, 3]
+  - [5, 4]
+  - [7, 6]
+  - [8, 7]
+  - [9, 8]
+  - [10, 9]
+  - [12, 11]
+  - [13, 12]
+  - [14, 13]
+  - [15, 13]
+  - [16, 15]
+  - [17, 16]
+  - [18, 17]
+  - [19, 13]
+  - [20, 19]
+  - [21, 20]
+  - [22, 21]
+bone_vector_edges:
+  - [11, 0]
+  - [1, 0]
+  - [6, 0]
+  - [2, 1]
+  - [3, 2]
+  - [4, 3]
+  - [5, 4]
+  - [7, 6]
+  - [8, 7]
+  - [9, 8]
+  - [10, 9]
+  - [12, 11]
+  - [13, 12]
+  - [14, 13]
+  - [15, 13]
+  - [16, 15]
+  - [17, 16]
+  - [18, 17]
+  - [19, 13]
+  - [20, 19]
+  - [21, 20]
+  - [22, 21]
+symmetry_pairs:
+  - [18, 22]
+  - [17, 21]
+  - [16, 20]
+  - [15, 19]
+  - [1, 6]
+  - [2, 7]
+  - [3, 8]
+  - [4, 9]
+  - [5, 10]
+channels: [x, y, z]
+frame_count: 120
