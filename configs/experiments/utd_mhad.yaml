@@ -1,6 +1,0 @@
-schema_version: 1
-teacher_config: ../utd_mhad/teacher.yaml
-student_config: ../utd_mhad/student.yaml
-output_root: ../../runs/utd_mhad
-teacher_seed: 2026
-student_seeds: [2026, 2027, 2028, 2029, 2030]

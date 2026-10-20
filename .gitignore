@@ -35,3 +35,20 @@ docs/validation.json
 .env
 *.local.yaml
 *.local.yml
+
+# Non-source delivery artifacts and private records
+*.zip
+*.rar
+*.7z
+*.pkl
+*.h5
+*.safetensors
+*.csv
+*.png
+*.pdf
+*.svg
+*.apk
+*.exe
+*.dll
+/clinical/
+/visualizations/

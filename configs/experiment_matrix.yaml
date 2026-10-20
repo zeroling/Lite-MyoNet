@@ -1,0 +1,161 @@
+schema_version: 1
+state_path: runs/matrix/state.json
+resolved_config_dir: runs/matrix/configs
+output_root: runs/matrix/outputs
+device: cuda
+archive_env: LITE_MYONET_DATA_ARCHIVE
+archive_path: data/synthetic.npz
+archive_sha256: not_checked
+teacher_seed: 2026
+student_seeds:
+- 11
+- 21
+- 31
+- 41
+- 51
+student_jobs: 1
+teacher_attention_recomputation: false
+cpu_threads_per_process: 1
+base_configs:
+  teacher: teacher.yaml
+  student: student.yaml
+items:
+- id: teacher_main
+  kind: teacher
+  role: primary_teacher
+  seed: 2026
+- id: temporal_fourier_d1
+  kind: student
+  override: ablations/temporal_fourier_d1.yaml
+  evidence_role: five_seed_degree_selection
+  save_epoch_weights: true
+- id: temporal_fourier_d2
+  kind: student
+  override: ablations/temporal_fourier_d2.yaml
+  evidence_role: five_seed_degree_selection
+  save_epoch_weights: true
+- id: temporal_fourier_d3
+  kind: student
+  override: ablations/temporal_fourier_d3.yaml
+  evidence_role: five_seed_degree_selection
+  save_epoch_weights: true
+- id: student_main
+  kind: reference
+  role: primary_student
+  reference_to: temporal_fourier_d2
+- id: temporal_standard
+  kind: student
+  override: ablations/temporal_standard.yaml
+  evidence_role: five_seed_ablation
+- id: temporal_bspline
+  kind: student
+  override: ablations/temporal_bspline.yaml
+  evidence_role: five_seed_ablation
+- id: distillation_ce_only
+  kind: student
+  override: ablations/distillation_ce_only.yaml
+  evidence_role: five_seed_ablation
+- id: distillation_logit_only
+  kind: student
+  override: ablations/distillation_logit_only.yaml
+  evidence_role: five_seed_ablation
+- id: distillation_logit_static
+  kind: student
+  override: ablations/distillation_logit_static.yaml
+  evidence_role: five_seed_ablation
+- id: distillation_logit_dynamic
+  kind: student
+  override: ablations/distillation_logit_dynamic.yaml
+  evidence_role: five_seed_ablation
+- id: distillation_full
+  kind: reference
+  reference_to: temporal_fourier_d2
+  override: ablations/distillation_full.yaml
+  evidence_role: five_seed_ablation
+- id: graph_static_only
+  kind: student
+  override: ablations/graph_static_only.yaml
+  evidence_role: five_seed_ablation
+- id: graph_dynamic_only
+  kind: student
+  override: ablations/graph_dynamic_only.yaml
+  evidence_role: five_seed_ablation
+- id: graph_full
+  kind: reference
+  reference_to: temporal_fourier_d2
+  override: ablations/graph_full.yaml
+  evidence_role: five_seed_ablation
+- id: classifier_linear
+  kind: student
+  override: ablations/classifier_linear.yaml
+  evidence_role: five_seed_ablation
+- id: classifier_cosine
+  kind: reference
+  reference_to: temporal_fourier_d2
+  override: ablations/classifier_cosine.yaml
+  evidence_role: five_seed_ablation
+- id: temporal_bspline_b1
+  kind: student
+  override: ablations/temporal_bspline_b1.yaml
+  evidence_role: five_seed_ablation
+- id: temporal_bspline_b2
+  kind: student
+  override: ablations/temporal_bspline_b2.yaml
+  evidence_role: five_seed_ablation
+- id: distillation_weights_s050_d050
+  kind: student
+  override: ablations/distillation_weights_s050_d050.yaml
+  evidence_role: five_seed_weight_scan
+- id: distillation_weights_s050_d100
+  kind: student
+  override: ablations/distillation_weights_s050_d100.yaml
+  evidence_role: five_seed_weight_scan
+- id: distillation_weights_s050_d200
+  kind: student
+  override: ablations/distillation_weights_s050_d200.yaml
+  evidence_role: five_seed_weight_scan
+- id: distillation_weights_s100_d050
+  kind: student
+  override: ablations/distillation_weights_s100_d050.yaml
+  evidence_role: five_seed_weight_scan
+- id: distillation_weights_s100_d200
+  kind: student
+  override: ablations/distillation_weights_s100_d200.yaml
+  evidence_role: five_seed_weight_scan
+- id: distillation_weights_s200_d050
+  kind: student
+  override: ablations/distillation_weights_s200_d050.yaml
+  evidence_role: five_seed_weight_scan
+- id: distillation_weights_s200_d100
+  kind: student
+  override: ablations/distillation_weights_s200_d100.yaml
+  evidence_role: five_seed_weight_scan
+- id: distillation_weights_s200_d200
+  kind: student
+  override: ablations/distillation_weights_s200_d200.yaml
+  evidence_role: five_seed_weight_scan
+- id: graph_no_learnable_bias
+  kind: student
+  override: ablations/graph_no_learnable_bias.yaml
+  evidence_role: five_seed_ablation
+- id: graph_no_fixed_prior
+  kind: student
+  override: ablations/graph_no_fixed_prior.yaml
+  evidence_role: five_seed_ablation
+- id: teacher_width_075
+  kind: teacher
+  override: ablations/teacher_width_075.yaml
+  seed: 2026
+  evidence_role: exploratory_single_seed
+- id: teacher_width_050
+  kind: teacher
+  override: ablations/teacher_width_050.yaml
+  seed: 2026
+  evidence_role: exploratory_single_seed
+degree_selection:
+  candidates:
+  - temporal_fourier_d1
+  - temporal_fourier_d2
+  - temporal_fourier_d3
+  metric: best_validation_accuracy_mean
+  tie_break: lower_degree

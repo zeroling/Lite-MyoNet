@@ -1,0 +1,104 @@
+description: Actual 300-epoch local comparison optimizer recipes; baseline source
+  code must be obtained separately.
+recipes:
+  stgcn:
+    optimizer: SGD
+    lr: 0.1
+    weight_decay: 0.0001
+    warmup: 0
+    milestones:
+    - 38
+    - 188
+    momentum: 0.9
+    nesterov: true
+    epochs: 300
+    learning_rate_batch_scaling: false
+  2s_agcn:
+    optimizer: SGD
+    lr: 0.1
+    weight_decay: 0.0001
+    warmup: 0
+    milestones:
+    - 180
+    - 240
+    momentum: 0.9
+    nesterov: true
+    epochs: 300
+    learning_rate_batch_scaling: false
+  motionbert:
+    optimizer: AdamW
+    lr: 0.0001
+    weight_decay: 0.01
+    warmup: 0
+    epoch_decay: 0.99
+    betas:
+    - 0.9
+    - 0.999
+    eps: 1.0e-08
+    epochs: 300
+    learning_rate_batch_scaling: false
+  blockgcn:
+    optimizer: SGD
+    lr: 0.05
+    weight_decay: 0.0004
+    warmup: 11
+    milestones:
+    - 236
+    - 257
+    momentum: 0.9
+    nesterov: true
+    epochs: 300
+    learning_rate_batch_scaling: false
+  mpgcn:
+    optimizer: SGD
+    lr: 0.1
+    weight_decay: 0.0002
+    warmup: 23
+    step_cosine: true
+    momentum: 0.9
+    nesterov: true
+    epochs: 300
+    learning_rate_batch_scaling: false
+  skateformer:
+    optimizer: AdamW
+    lr: 0.001
+    weight_decay: 0.1
+    warmup: 15
+    step_cosine: true
+    warmup_init: 1.0e-07
+    min_lr: 1.0e-05
+    warmup_prefix: false
+    label_smoothing: 0.1
+    grad_clip: 1.0
+    betas:
+    - 0.9
+    - 0.999
+    eps: 1.0e-08
+    epochs: 300
+    learning_rate_batch_scaling: false
+  skefreqmix:
+    optimizer: SGD
+    lr: 0.1
+    weight_decay: 0.0005
+    warmup: 15
+    milestones:
+    - 105
+    - 165
+    - 225
+    momentum: 0.9
+    nesterov: true
+    epochs: 300
+    learning_rate_batch_scaling: false
+  hypergcn:
+    optimizer: SGD
+    lr: 0.05
+    weight_decay: 0.0004
+    warmup: 11
+    milestones:
+    - 236
+    - 257
+    label_smoothing: 0.1
+    momentum: 0.9
+    nesterov: true
+    epochs: 300
+    learning_rate_batch_scaling: false

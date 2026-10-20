@@ -1,0 +1,5 @@
+model:
+  use_static_graph: true
+  use_fixed_prior: false
+  use_learnable_bias: true
+  use_dynamic_graph: true

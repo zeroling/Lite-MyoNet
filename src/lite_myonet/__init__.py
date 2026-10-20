@@ -1,3 +1,6 @@
-"""Lite-MyoNet public training and deployment package."""
+"""Lite-MyoNet reproducible research implementation."""
 
-__version__ = "0.2.0"
+from .models import LiteMyoNet, MyoFormer, MyoFormerStudent, MyoFormerTeacher
+
+__version__ = "0.3.0"
+__all__ = ["MyoFormerTeacher", "MyoFormerStudent", "MyoFormer", "LiteMyoNet"]

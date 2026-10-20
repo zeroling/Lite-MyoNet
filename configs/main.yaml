@@ -1,0 +1,29 @@
+schema_version: 1
+state_path: runs/main/state.json
+resolved_config_dir: runs/main/configs
+output_root: runs/main/outputs
+device: cuda
+archive_env: LITE_MYONET_DATA_ARCHIVE
+archive_path: data/synthetic.npz
+archive_sha256: not_checked
+teacher_seed: 2026
+student_seeds:
+- 11
+- 21
+- 31
+- 41
+- 51
+student_jobs: 1
+teacher_attention_recomputation: false
+cpu_threads_per_process: 1
+base_configs:
+  teacher: teacher.yaml
+  student: student.yaml
+items:
+- id: teacher_main
+  kind: teacher
+  role: primary_teacher
+  seed: 2026
+- id: student_main
+  kind: student
+  save_epoch_weights: true

@@ -17,6 +17,7 @@ Zheng Fang, Jia Li, Xiaoheng Zhao, Chunsheng Hua. **MyoFormer: Anatomy-guided tr
 
 本仓库提供上游数据接入和转换代码，不包含上游模拟器源码、二进制或控制策略权重。上游独立代码继续适用其原许可证，不改为 MIT。
 
-## UTD-MHAD（多模态人体动作数据集）
 
-骨架及示例归档由数据准备脚本从[官方页面](https://personal.utdallas.edu/~kehtar/UTD-MHAD.html)下载。原始及转换数据不随源码发布，数据使用和引用遵循官方要求。项目 MIT 许可证不覆盖数据集、私人受试者数据或第三方模型权重。
+## Comparison methods / 对比方法
+
+Only optimizer configuration metadata is included. Third-party baseline implementations, pretrained weights, simulators and datasets are not bundled; obtain them from their respective authors and follow their original terms.

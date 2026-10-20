@@ -22,5 +22,5 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install --upgrade pip
       - run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-      - run: python -m pip install -e '.[data,test,export]'
+      - run: python -m pip install -e '.[data,test,export,visualization]'
       - run: python -m pytest -q

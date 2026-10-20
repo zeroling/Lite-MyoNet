@@ -1,47 +1,69 @@
-schema_version: 1
-skeleton_config: skeletons/fullbody23.yaml
-label_map: label_map.json
 data:
-  train: ../data/fullbody23/processed/train.npz
-  val: ../data/fullbody23/processed/val.npz
-  test: ../data/fullbody23/processed/test.npz
-output_root: ../runs/fullbody23
-seeds: [2026]
-epochs: 300
-batch_size: 32
-num_workers: 0
-cpu_threads: 1
-precision: bf16
+  archive: ../data/synthetic.npz
+  archive_sha256: not_checked
+  label_map: label_map.json
+  frames: 120
+  num_points: 23
+output_root: ../runs/teacher
+seeds:
+- 2026
 deterministic: true
-selection_metric: macro_f1
+selection_metric: accuracy
+epochs: 300
+batch_size: 16
+num_workers: 0
+precision: fp32
 model:
+  num_points: 23
+  in_channels: 3
   dropout: 0.05
-  spatial_attention_config:
+  use_joint_spatial_stream: true
+  use_joint_temporal_stream: true
+  use_bone_vector_stream: true
+  use_spatial_attention: true
+  use_symmetry_attention: true
+  use_scale_attention: true
+  spatial_attention:
     num_heads: 8
     cdiv_win: 5
-  symmetry_attention_config:
+  symmetry_attention:
     num_heads: 8
     use_contra: true
-  scale_attention_config:
+  scale_attention:
     num_heads: 8
-  head_config:
-    dropout: 0.30
+  head:
+    type: cosine
+    dropout: 0.3
     norm: layernorm
     scale_init: 10.0
     scale_min: 1.0
     scale_max: 20.0
     num_mc_samples: 0
     mc_dropout_eval: false
+  input_scheme: X1/X2/X2
 loss:
-  label_smoothing: 0.05
+  label_smoothing: 0.0
+  train_temperature: 1.0
+  eval_temperature: 1.3
+  confidence_penalty: 0.02
+  topk_gap_weight: 0.05
+  topk_gap_k: 3
 optimizer:
-  type: AdamW
-  peak_lr: 0.0005
+  peak_lr: 0.001
   weight_decay: 0.0001
-  betas: [0.9, 0.999]
-  eps: 1.0e-8
+  betas:
+  - 0.9
+  - 0.999
+  eps: 1.0e-08
 scheduler:
-  warmup_ratio: 0.1
-  warmup_init_lr: 0.0001
-  warmup_gamma: 1.0
-  decay_gamma: 2.0
+  type: warmup_cosine
+  warmup_epochs: 30
+  warmup_init_lr: 5.0e-05
+  warmup_gamma: 0.5
+  min_lr: 1.0e-06
+evaluation:
+  batch_norm_recalibration:
+    enabled: true
+    batch_size: 4
+    mode: final_only
+save_epoch_weights: true

@@ -1,0 +1,3 @@
+model:
+  temporal_basis: fourier
+  fourier_degree: 2

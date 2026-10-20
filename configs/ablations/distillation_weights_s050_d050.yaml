@@ -1,0 +1,4 @@
+distillation:
+  kd_weight: 1.0
+  static_adjacency_weight: 0.05
+  dynamic_similarity_weight: 0.05

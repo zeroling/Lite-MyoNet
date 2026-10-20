@@ -1,205 +1,60 @@
-[English](README.md) | [简体中文](README.zh-CN.md)
-
 # Lite-MyoNet
 
-Lite-MyoNet 是用于骨架序列分类的教师—学生框架：教师为 MyoFormer，学生为 Lite-MyoNet。项目提供模型训练、公开数据准备、数据转换、测试集评估和 ONNX（开放神经网络交换格式）导出入口。
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-教师依据已发表论文 [MyoFormer: Anatomy-guided transformer for muscle-level pathological gait assessment](https://doi.org/10.1007/s11517-026-03608-x)（MyoFormer：解剖引导的肌肉层面病理步态评估 Transformer）。学生采用轻量时空编码、傅里叶层和教师蒸馏；默认 fourier_degree: 2 是配置值，可在 YAML（配置文件）中调整。
+本仓库提供本轮实际使用的MyoFormer教师、Lite-MyoNet学生和ST-GTP蒸馏代码，包括训练、消融矩阵、数据转换、ONNX导出及特征亲和骨架图。数据集、患者记录、学习权重、实验输出和本机环境不随源码发布。
 
 ## 安装
 
-需要 Python（编程语言）3.10 或更新版本。按设备安装适用的 PyTorch（深度学习框架）后，在仓库根目录运行：
+使用Python 3.10或更新版本，先根据设备驱动安装兼容的PyTorch（2.4或更新版本）。已整理的Windows便携环境使用PyTorch 2.7.1、CUDA 12.8；不需要照搬开发机的解释器路径。
 
-~~~powershell
-python -m pip install -e ".[data,export,test]"
-~~~
+```powershell
+python -m pip install -e ".[data,export,visualization,test]"
+```
 
-## 输入数据
+## 当前模型与训练
 
-训练数据为 NCTV（样本、坐标通道、时间帧、骨架节点）格式的关节位置数组，形状为 [N,C,T,V]，类型为 float32（32 位浮点数）。
+- 教师为全宽、8头、三流X1/X2/X2，种子2026。
+- 学生为关节/骨双流，通道32/64/128、傅里叶D=2、标准三分区骨架邻接、可学习偏置、动态图与余弦分类头。
+- 学生种子11、21、31、41、51；默认300轮、FP32、批量16。优化器、预热和后程曲线的实际数值见 `configs/teacher.yaml` 与 `configs/student.yaml`。
+- ST-GTP按静态时间均值和动态相邻帧绝对差构造关系；通道归一化后计算平方距离与逐行归一化RBF，使用教师到学生的前向KL。关节阶段分别对两个教师分支计算后按0.5/0.5加权，再累加各阶段；骨流一对一对齐。
+- X1/X2/X2下，教师第二个关节命名分支实际接收骨向量，不能根据名称推断输入。
+- 主配置保存每轮与最佳权重。续跑只要求断点可读且能恢复，不以哈希验证作为门槛。
 
-NPZ（NumPy 压缩数组文件）须恰含 joints 和 labels 两个数组；NPY（NumPy 数组文件）关节输入须配同名前缀的 .labels.npy 文件。labels 为长度 N 的整数向量，类别编号从 0 连续递增。
+数据只提供 [格式说明](docs/DATA_FORMAT.md)、[仿真生成与转换](docs/DATA_GENERATION.md)、[Kinect兼容映射](docs/CLINICAL_MAPPING.md)。自行准备 `data/synthetic.npz`，或用环境变量 `LITE_MYONET_DATA_ARCHIVE` 指定本地归档：
 
-~~~python
-import numpy as np
+```powershell
+python scripts/train_all.py --device cuda --student-jobs 1
+```
 
-np.savez_compressed(
-    "train.npz",
-    joints=joints.astype(np.float32),
-    labels=labels.astype(np.int64),
-)
-~~~
+教师严格串行；学生并行数先设1，自行确认显存后再增加。主训练固定D=2。需要傅里叶阶数选择及完整消融矩阵时运行：
 
-节点数、帧数和通道须与骨架 YAML 配置一致。UTD-MHAD 默认输入为 [N,3,120,20]；23 节点步态配置为 [N,3,120,23]。模型根据 bone_vector_edges 从关节位置计算骨向量。
+```powershell
+python scripts/run_experiment_matrix.py --plan configs/experiment_matrix.yaml --device cuda --student-jobs 1
+```
 
-自定义骨架时，设置 point_count、按序排列的 nodes、root_index、model_graph_edges、bone_vector_edges、symmetry_pairs、channels 和 frame_count；类别名称与编号在 JSON（结构化文本）标签表中配置。
+加 `--resume` 继续已有任务；加 `--dry-run` 只检查计划，不训练，但仍需本地归档可读取。单独训练使用 `scripts/train_teacher.py --config configs/teacher.yaml` 和 `scripts/train_student.py --config configs/student.yaml`；后者需在配置中填入自行训练的教师权重路径，并在权重同目录保留 `resolved_config.yaml`。单个训练器续跑用 `--resume 断点或运行目录`。
 
-## UTD-MHAD：准备与训练
+`configs/baseline_optimizers.yaml` 保留八个对比方法的优化器方案说明；第三方模型源码与依赖按其原项目获取，本次源码包不捆绑分发。
 
-本项目使用 [UTD-MHAD 官方骨架数据](https://personal.utdallas.edu/~kehtar/UTD-MHAD.html)，支持 27 个动作类别和 20 节点骨架。准备脚本下载官方骨架与示例代码包，生成训练、验证和测试数据：
+## 导出与可视化
 
-~~~powershell
-python scripts/prepare_utd_mhad.py
-~~~
+```powershell
+python scripts/export_onnx.py --checkpoint checkpoints/best_student.pth --output outputs/student.onnx
+```
 
-数据默认写入 data/utd_mhad/processed/。跨受试者拆分为 344 条训练、87 条验证、430 条测试序列；处理时以髋中心对齐并插值为 120 帧。
+当前ONNX是双输入：`joint_coordinates`（关节坐标）、`bone_vectors`（骨向量），均为 `[B,3,120,23]`，输出 `logits`（分类分数）。不要把较早的单输入导出或旧发布目录的另一套权重混用。
 
-端到端训练依次运行一个教师和配置中的五个学生种子：
+[拓扑绘图说明](docs/TOPOLOGY.md) 提供自行传入教师、两个同种子D=2学生和临床窗口的命令，直接在22条真实骨架边上标色。仓库没有内嵌患者样本；亲和值不解释为肌肉激活、肌力或解剖因果连接。
 
-~~~powershell
-python scripts/train_all.py --config configs/experiments/utd_mhad.yaml --device cuda
-~~~
+## 源码位置
 
-中断后继续未完成阶段：
+- `src/lite_myonet/models/teacher.py`、`student.py`：与本轮权重兼容的模型实现。
+- `src/lite_myonet/training/`：训练器、蒸馏、断点、教师缓存、调度和最终BN统计重估支持。
+- `scripts/run_experiment_matrix.py`、`configs/ablations/`：实验矩阵及消融配置。
+- `src/lite_myonet/visualization/`：真实特征提取与矢量绘图。
+- `src/lite_myonet/data/`、`integrations/`：打包、映射、仿真采集与转换。
 
-~~~powershell
-python scripts/train_all.py --config configs/experiments/utd_mhad.yaml --device cuda --resume
-~~~
+公开类名 `MyoFormer`、`LiteMyoNet` 分别是 `MyoFormerTeacher`、`MyoFormerStudent` 的别名，避免维护两套不同结构。
 
-也可分别训练教师和学生，按顺序运行：
-
-~~~powershell
-python scripts/train_teacher.py --config configs/utd_mhad/teacher.yaml --device cuda
-python scripts/train_student.py --config configs/utd_mhad/student.yaml --device cuda
-~~~
-
-学生配置默认读取同一输出目录下的最佳教师权重。设备可设为 cuda 或 cpu，默认输出目录为 runs/utd_mhad/。训练用验证集 Macro-F1（宏平均 F1）选择权重，完成后评估测试集。
-
-## 使用自备数据
-
-按上文格式准备 train、val、test 三个数据拆分。复制 configs/teacher.yaml、configs/student.yaml，并在副本中更新数据路径、骨架 YAML、标签表、教师权重和输出目录。
-
-修改 configs/train_all.yaml 中的 teacher_config、student_config，使流水线指向上述配置副本，并设置独立 output_root。各路径按对应 YAML 文件的位置填写。
-
-~~~powershell
-python scripts/train_all.py --config configs/train_all.yaml --device cuda
-~~~
-
-分别训练时，使用对应配置运行 train_teacher.py，再运行 train_student.py。学生配置的 seeds 字段可指定一个或多个种子。
-
-## Generative GaitNet 合成步态数据
-
-合成数据基于 Generative GaitNet（生成式步态网络）的肌骨仿真，固定使用上游提交 [eaf3e256925c8b0acc3e95b539535beba105b511](https://github.com/namjohn10/GenerativeGaitNet/tree/eaf3e256925c8b0acc3e95b539535beba105b511)。
-
-每条病理条件只设置一个目标肌肉组的最大等长肌力比例 r = 1 - w，其中 w = 0.05–0.40。标签包括左右侧各 16 个肌肉组（32 个病理类别）及一个正常类别；其余肌肉组的最大肌力比例保持 1.0。
-
-病理条件在 r=0.600–0.950 范围内，以 0.001 为参数分辨率选取，共 11,200 条。正常条件覆盖 r=0.951–1.000，共 1,600 条。仿真计划共 12,800 条条件，训练、验证和测试集的目标划分比例为 2∶1∶1。
-
-这是公开配置定义的仿真计划，不代表轨迹已生成。
-
-### 构建上游环境与生成条件表
-
-仿真器与策略在 Generative GaitNet 上游环境中独立部署。按固定提交构建：
-
-~~~bash
-git clone https://github.com/namjohn10/GenerativeGaitNet.git
-cd GenerativeGaitNet
-git checkout eaf3e256925c8b0acc3e95b539535beba105b511
-./install.sh
-./pc_build.sh
-cd build
-make -j32
-~~~
-
-上游说明的依赖为 Python 3.6 和 Ray 1.8.0（分布式训练框架），应与本项目的分类训练环境分开配置。上游策略入口为 imgui_render/imgui_render；启动单网络或四网络级联策略时，按该固定提交的 README 提供相应网络文件路径。
-
-在 Lite-MyoNet 仓库根目录创建条件表：
-
-~~~powershell
-python scripts/create_gaitnet_conditions.py --config configs/conversion/generative_gaitnet_conditions.yaml --output data/gaitnet/conditions.json
-~~~
-
-JSON 条目记录 condition_id（条件编号）、label_name（标签名）、target_force_scale（目标肌力比例）、split（数据拆分）和 simulation_seed（仿真种子）。逐条运行策略时，每个标签只改变对应的精确肌肉单元。
-
-单策略启动入口示例；网络文件路径须替换为该上游版本对应的策略：
-
-~~~bash
-./imgui_render/imgui_render path/to/network
-~~~
-
-### 应用肌力条件并运行步行
-
-每条轨迹从目标肌肉以外各组最大肌力比例均为 1.0 的基准状态开始。上游 python/ray_env.py 的 reset() 包装器会重新抽取并写入 current_paramstate；使用该包装器时，每次 reset 后都要重新应用目标比例，或关闭自动参数采样。底层 Environment::Reset 不会自动改变肌力比例。
-
-通过 GetParamState（读取参数状态）取得基准向量，按实际元数据顺序定位最大肌力参数段（位于肌肉长度参数段之后），把目标组比例设为 r，再用 SetParamState（设置参数状态）写入并回读确认。比例直接赋值，无需再次归一化。左右外侧腓肠肌头应分别匹配 L_Gastrocnemius_Lateral_Head 和 R_Gastrocnemius_Lateral_Head；宽泛的 group L_Gastrocnemius 会同时匹配内、外侧头。
-
-metadata.txt 的控制频率为 30 Hz、物理仿真频率为 480 Hz；metadata_fullbody.txt 的控制频率为 30 Hz、物理仿真频率为 600 Hz。每次运行均记录实际加载的元数据、策略版本与控制和仿真频率。
-
-按同一控制策略逐条件模拟 20 m 直线行走。依据 MyoFormer 论文，先根据实际位移确定从起点 5 m 至 15 m 的中央 10 m 稳态区间。这 10 m 用于限定采样的空间范围，其行走时间由每条轨迹的实际步速决定。
-
-随后在稳态区间内截取一个完整的固定时长窗口，按时间戳以 30 Hz（赫兹）重采样为 120 帧，首帧至末帧间隔约 3.97 秒。窗口的起点和终点均须位于稳态区间内；它只是中央 10 m 轨迹中的一段，不对应走完这 10 m 所需的时间。将窗口起始时间记录为 window_start_seconds，供转换器提取对应序列。
-
-采集每帧 23 个刚体的位置、递增时间戳、与位置轴对应的唯一刚体名称及类别名。上游 GetState() 返回扁平状态向量，不是按刚体命名的位置数组。本项目不运行模拟器或策略，逐帧位置采集需由模拟器侧接入钩子完成。
-
-采集归档接口接收以下数据：
-
-| 字段 | 形状 | 内容 |
-|---|---|---|
-| positions | [N,F,B,3] 或单条 [F,B,3] | 逐帧命名刚体三维位置 |
-| timestamps | [N,F] 或单条 [F] | 秒级时间戳，严格递增 |
-| body_names | [B] | 与位置数组刚体轴对应的唯一名称 |
-| label_names | [N] | 来自项目标签表的类别名称 |
-| sample_metadata | 每个样本一条记录 | 条件编号、拆分、种子、频率和窗口起点 |
-
-通过 integrations/generative_gaitnet/capture_archive.py 中的 write_capture_archive 归档。传入 sample_metadata 字典列表后，函数会编码并写入 metadata_json_utf8（UTF-8 字节数组）：
-
-~~~python
-from integrations.generative_gaitnet.capture_archive import write_capture_archive
-
-write_capture_archive(
-    "data/gaitnet/raw/train.npz",
-    positions,
-    timestamps,
-    body_names,
-    label_names,
-    sample_metadata,
-)
-~~~
-
-每个样本按条件表中的 split 归入 train、val 或 test，并保留 condition_id。
-
-### 转换为 NCTV 并训练
-
-train、val、test 三个拆分分别转换。每条轨迹的窗口起点写入样本元数据后，可省略命令行窗口参数：
-
-~~~powershell
-python scripts/convert_generative_gaitnet.py --input data/gaitnet/raw/train.npz --output data/gaitnet/processed/train.npz --config configs/conversion/generative_gaitnet.yaml
-~~~
-
-将命令中的 train 分别替换为 val 和 test。转换器按刚体名称重排 23 个节点，使用时间戳线性插值为 120 帧、30 Hz，输出 NCTV [N,3,120,23] 的 float32 数组和整数标签。NPZ 仅含 joints 和 labels；类别名和转换记录保存在同名 .metadata.json 文件中。
-
-复制 configs/teacher.yaml、configs/student.yaml，更新三个数据拆分、骨架、标签表、教师权重和输出目录；同时让 configs/train_all.yaml 指向新配置，然后按“使用自备数据”一节训练。
-
-## ONNX 导出与测试
-
-训练后导出学生最佳权重：
-
-~~~powershell
-python scripts/export_onnx.py --checkpoint runs/utd_mhad/student_seed_2026/best_student.pth --output outputs/litemyonet_utd_mhad.onnx
-~~~
-
-ONNX 模型接收 joints 关节坐标并输出 logits（分类得分）。
-
-安装部分提供测试依赖。运行测试：
-
-~~~powershell
-python -m pytest
-~~~
-
-## 模块、引用与许可
-
-主要实现文件：
-
-- src/lite_myonet/models/myoformer.py：MyoFormer 教师；
-- src/lite_myonet/models/lite_myonet.py：Lite-MyoNet 学生；
-- src/lite_myonet/training/teacher_trainer.py 和 student_trainer.py：教师与学生训练；
-- src/lite_myonet/training/engine.py：训练引擎；
-- src/lite_myonet/export/onnx_export.py：ONNX 导出。
-
-教师论文：Fang, Zheng; Li, Jia; Zhao, Xiaoheng; Hua, Chunsheng. [MyoFormer: Anatomy-guided transformer for muscle-level pathological gait assessment](https://doi.org/10.1007/s11517-026-03608-x)（MyoFormer：面向肌肉层级病理步态评估的解剖引导变换器）. Medical & Biological Engineering & Computing（医学与生物工程及计算）, 64(7), 2613–2632, 2026.
-
-合成数据来源：Park, Jungnam; Min, Sehee; Chang, Phil Sik; Lee, Jaedong; Park, Moon Seok; Lee, Jehee. “Generative GaitNet”（生成式步态网络）. ACM SIGGRAPH 2022 Conference Proceedings（ACM SIGGRAPH 2022 会议论文集）, 2022. [DOI](https://doi.org/10.1145/3528233.3530717)；[固定上游提交](https://github.com/namjohn10/GenerativeGaitNet/tree/eaf3e256925c8b0acc3e95b539535beba105b511)。
-
-UTD-MHAD：[官方数据页面](https://personal.utdallas.edu/~kehtar/UTD-MHAD.html)。BibTeX（文献条目）见 references.bib。
-
-项目代码采用 MIT License（MIT 许可证）。第三方代码与数据按各自条款使用，详情见 THIRD_PARTY_NOTICES.md。
+教师论文：[MyoFormer](https://doi.org/10.1007/s11517-026-03608-x)；仿真来源：[Generative GaitNet](https://github.com/namjohn10/GenerativeGaitNet/tree/eaf3e256925c8b0acc3e95b539535beba105b511)。引用见 `references.bib`。自有代码保留仓库既有MIT许可，第三方软件、数据和权重遵循原有条款，详见 [第三方说明](THIRD_PARTY_NOTICES.md)。

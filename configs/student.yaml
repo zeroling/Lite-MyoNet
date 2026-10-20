@@ -1,41 +1,61 @@
-schema_version: 1
-skeleton_config: skeletons/fullbody23.yaml
-label_map: label_map.json
 data:
-  train: ../data/fullbody23/processed/train.npz
-  val: ../data/fullbody23/processed/val.npz
-  test: ../data/fullbody23/processed/test.npz
-output_root: ../runs/fullbody23
-seeds: [2026, 2027, 2028, 2029, 2030]
-epochs: 300
-batch_size: 32
-num_workers: 0
-cpu_threads: 1
-precision: bf16
-deterministic: true
-selection_metric: macro_f1
-model:
-  channels: [32, 64, 128]
-  dropout: 0.05
-  fourier_degree: 2
+  archive: ../data/synthetic.npz
+  archive_sha256: not_checked
+  label_map: label_map.json
+  frames: 120
+  num_points: 23
 teacher:
-  checkpoint: ../runs/fullbody23/teacher_seed_2026/best_teacher.pth
+  checkpoint: ../runs/teacher/best_teacher.pth
+  sha256: not_checked
+output_root: ../runs/student
+seeds:
+- 11
+- 21
+- 31
+- 41
+- 51
+deterministic: true
+selection_metric: accuracy
+epochs: 300
+batch_size: 16
+num_workers: 0
+precision: fp32
+model:
+  num_points: 23
+  in_channels: 3
+  channels:
+  - 32
+  - 64
+  - 128
+  dropout: 0.5
+  temporal_basis: fourier
+  fourier_degree: 2
+  spline_grid_size: 3
+  use_static_graph: true
+  use_dynamic_graph: true
+  use_learnable_bias: true
+  classifier_head: cosine
+  use_fixed_prior: true
+loss:
+  label_smoothing: 0
 distillation:
   kd_temperature: 4.0
   topology_temperature: 0.2
   kd_weight: 1.0
-  static_adjacency_weight: 1.0
-  dynamic_similarity_weight: 1.0
-loss:
-  label_smoothing: 0.05
+  static_adjacency_weight: 0.1
+  dynamic_similarity_weight: 0.1
 optimizer:
-  type: AdamW
-  peak_lr: 0.0005
+  peak_lr: 0.001
   weight_decay: 0.0001
-  betas: [0.9, 0.999]
-  eps: 1.0e-8
+  betas:
+  - 0.9
+  - 0.999
+  eps: 1.0e-08
 scheduler:
   warmup_ratio: 0.1
   warmup_init_lr: 0.0001
   warmup_gamma: 1.0
-  decay_gamma: 2.0
+  decay_gamma: 1.0
+  type: warmup_cosine
+  min_lr: 1.0e-06
+save_epoch_weights: true

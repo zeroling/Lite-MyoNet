@@ -1,0 +1,3 @@
+model:
+  temporal_basis: bspline
+  spline_grid_size: 2

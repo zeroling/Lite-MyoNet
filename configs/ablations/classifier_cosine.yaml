@@ -1,0 +1,2 @@
+model:
+  classifier_head: cosine

@@ -11,7 +11,7 @@ SOURCE_ROOT = PROJECT_ROOT / "src"
 if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
-from lite_myonet.export.onnx_export import main
+from lite_myonet.export.onnx import main
 
 
 if __name__ == "__main__":

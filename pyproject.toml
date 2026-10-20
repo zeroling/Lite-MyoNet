@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lite-myonet"
-version = "0.2.0"
+version = "0.3.0"
 description = "Teacher-student gait classification with configurable skeleton topology"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -13,11 +13,13 @@ dependencies = [
     "numpy>=1.24,<3",
     "PyYAML>=6,<7",
     "scikit-learn>=1.3,<2",
-    "torch>=2.0",
+    "torch>=2.4",
     "tqdm>=4.66,<5",
 ]
 
 [project.optional-dependencies]
+visualization = ["matplotlib>=3.8,<4"]
+
 data = [
     "scipy>=1.10,<2",
 ]
@@ -32,10 +34,9 @@ test = [
 [project.scripts]
 lite-myonet-train-teacher = "lite_myonet.training.teacher_trainer:main"
 lite-myonet-train-student = "lite_myonet.training.student_trainer:main"
-lite-myonet-train-all = "lite_myonet.training.pipeline:main"
+lite-myonet-topology = "lite_myonet.visualization.topology:main"
 lite-myonet-convert-gaitnet = "lite_myonet.data.generative_gaitnet:main"
-lite-myonet-prepare-utd-mhad = "lite_myonet.data.utd_mhad:main"
-lite-myonet-export-onnx = "lite_myonet.export.onnx_export:main"
+lite-myonet-export-onnx = "lite_myonet.export.onnx:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

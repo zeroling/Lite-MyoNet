@@ -1,0 +1,8 @@
+model:
+  width_ratio: 0.75
+  spatial_attention:
+    num_heads: 6
+  symmetry_attention:
+    num_heads: 6
+  scale_attention:
+    num_heads: 6
