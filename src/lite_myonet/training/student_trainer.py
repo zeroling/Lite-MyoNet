@@ -78,7 +78,7 @@ _ROOT_KEYS = {
     "data", "teacher", "output_root", "seeds", "deterministic",
     "selection_metric", "epochs", "batch_size", "num_workers",
     "prefetch_factor", "model", "loss", "distillation", "optimizer",
-    "scheduler", "precision", "teacher_cache", "save_epoch_weights",
+    "scheduler", "precision", "teacher_cache", "save_epoch_weights", "grad_clip_norm",
 }
 _DATA_KEYS = {"archive", "archive_sha256", "label_map", "frames", "num_points"}
 _TEACHER_KEYS = {"checkpoint", "sha256"}
@@ -254,6 +254,8 @@ def validate_student_config(config):
     for name in ("epochs", "batch_size"):
         if isinstance(config[name], bool) or int(config[name]) <= 0:
             raise ValueError(f"{name} 必须为正整数。")
+    if "grad_clip_norm" in config:
+        _finite_number(config["grad_clip_norm"], "grad_clip_norm", minimum=0.0, minimum_open=True)
     workers = config["num_workers"]
     if isinstance(workers, bool) or int(workers) != 0:
         raise ValueError("内存 NPZ 数据包训练要求 num_workers=0。")
@@ -712,7 +714,9 @@ def create_student_training_objects(config, device, num_classes):
         {"warmup_epochs": int(config["epochs"] * scheduler_config["warmup_ratio"]),
          "min_lr": float(scheduler_config.get("min_lr", 1e-6)), "legacy_warmup_index": True}
         if scheduler_class is WarmupCosineLR else
-        {"warmup_ratio": float(scheduler_config["warmup_ratio"]), "decay_gamma": float(scheduler_config["decay_gamma"])}
+        {"warmup_ratio": float(scheduler_config["warmup_ratio"]),
+         "decay_gamma": float(scheduler_config["decay_gamma"]),
+         "legacy_warmup_index": scheduler_config.get("type") != "warmup_linear"}
     )
     scheduler = scheduler_class(
         optimizer=optimizer,
@@ -761,9 +765,13 @@ def run_student_epoch(
     student, teacher, loader, criterion, distillation, device, split,
     optimizer=None, keep_probabilities=False, precision="fp32", scaler=None,
     teacher_cache=None,
-    progress_description=None,
+    progress_description=None, grad_clip_norm=None,
 ):
     training = optimizer is not None
+    clip_parameters = (
+        [parameter for group in optimizer.param_groups for parameter in group["params"]]
+        if training and grad_clip_norm is not None else ()
+    )
     student.train(training)
     teacher.eval()
     scaler = scaler if scaler is not None else create_grad_scaler(device, precision)
@@ -847,7 +855,8 @@ def run_student_epoch(
                     scaler.unscale_(optimizer)
                 else:
                     loss.backward()
-                # 旧学生入口直接更新，不做教师所用的梯度范数裁剪。
+                if clip_parameters:
+                    torch.nn.utils.clip_grad_norm_(clip_parameters, max_norm=grad_clip_norm)
                 if scaler.is_enabled():
                     scaler.step(optimizer)
                     scaler.update()
@@ -1651,7 +1660,7 @@ def train_one_student_seed(
                 student, teacher, train_loader, criterion, distillation, device,
                 split="train", optimizer=optimizer, keep_probabilities=False,
                 precision=requested_precision, scaler=scaler,
-                teacher_cache=teacher_cache,
+                teacher_cache=teacher_cache, grad_clip_norm=config.get("grad_clip_norm"),
                 progress_description=f"学生 种子{seed} 第{epoch}/{config['epochs']}轮 训练",
             )
             val_metrics, _, _, _ = run_student_epoch(

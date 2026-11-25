@@ -19,7 +19,7 @@ def test_default_student_and_readable_resume(monkeypatch):
     validate_student_config(cfg)
     assert cfg["model"]["fourier_degree"] == 2
     assert cfg["seeds"] == [11, 21, 31, 41, 51]
-    assert cfg["precision"] == "fp32" and cfg["batch_size"] == 16
+    assert cfg["precision"] == "fp32" and cfg["batch_size"] == 64
     assert LiteMyoNet is MyoFormerStudent
     monkeypatch.setenv("LITE_MYONET_RESUME_READABLE_ONLY", "0")
     assert resume_readable_only()

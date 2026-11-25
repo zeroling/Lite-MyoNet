@@ -72,12 +72,13 @@ class WarmupHoldCosineLR(_LRScheduler):
 
 class TwoStageLR(_LRScheduler):
     def __init__(self, optimizer, total_epochs=500, peak_lr=1e-3,
-                 warmup_ratio=0.2, warmup_init_lr=5e-5, warmup_gamma=2.0, decay_gamma=2.0, last_epoch=-1):
+                 warmup_ratio=0.2, warmup_init_lr=5e-5, warmup_gamma=2.0, decay_gamma=2.0,
+                 last_epoch=-1, legacy_warmup_index=True):
         """
         Two-Stage Learning Rate Scheduler
         - warmup 阶段: 从 warmup_init_lr 按幂次曲线上升到 peak_lr
         - decay 阶段: 使用旧代码 ``peak_lr*(1-progress**decay_gamma)``。
-        - 轮次索引沿用旧 ``last_epoch+1``，包括初始化后的首轮学习率。
+        - 预热默认使用旧轮次索引；关闭时，首轮使用预热初始学习率。
         """
         if total_epochs <= 0:
             raise ValueError("total_epochs 必须大于 0。")
@@ -92,6 +93,7 @@ class TwoStageLR(_LRScheduler):
         self.warmup_init_lr = float(warmup_init_lr)
         self.warmup_gamma = warmup_gamma
         self.decay_gamma = decay_gamma
+        self.legacy_warmup_index = legacy_warmup_index
 
         self.warmup_epochs = int(self.total_epochs * warmup_ratio)
         self.decay_epochs = self.total_epochs - self.warmup_epochs
@@ -106,7 +108,11 @@ class TwoStageLR(_LRScheduler):
         epoch = self.last_epoch + 1
 
         if self.warmup_epochs > 0 and epoch <= self.warmup_epochs:
-            progress = epoch / self.warmup_epochs
+            progress = (
+                epoch / self.warmup_epochs
+                if self.legacy_warmup_index or self.warmup_epochs == 1
+                else (epoch - 1) / (self.warmup_epochs - 1)
+            )
             lr = self.warmup_init_lr + (self.peak_lr - self.warmup_init_lr) * (progress ** self.warmup_gamma)
         elif epoch <= self.total_epochs:
             decay_progress = (epoch - self.warmup_epochs) / self.decay_epochs

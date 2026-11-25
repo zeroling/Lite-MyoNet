@@ -1,7 +1,7 @@
 schema_version: 1
-state_path: runs/main/state.json
-resolved_config_dir: runs/main/configs
-output_root: runs/main/outputs
+state_path: runs/paper-main/state.json
+resolved_config_dir: runs/paper-main/configs
+output_root: runs/paper-main/outputs
 device: cuda
 archive_env: LITE_MYONET_DATA_ARCHIVE
 archive_path: data/synthetic.npz

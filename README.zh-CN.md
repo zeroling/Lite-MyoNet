@@ -14,11 +14,11 @@ python -m pip install -e ".[data,export,visualization,test]"
 
 ## 当前模型与训练
 
-- 教师为全宽、8头、三流X1/X2/X2，种子2026。
+- 教师采用全宽、8 个注意力头和种子 2026。三路输入为 X1/X1/X2，关节空间分支和关节时间分支均接收关节坐标，骨分支接收骨向量。
 - 学生为关节/骨双流，通道32/64/128、傅里叶D=2、标准三分区骨架邻接、可学习偏置、动态图与余弦分类头。
-- 学生种子11、21、31、41、51；默认300轮、FP32、批量16。优化器、预热和后程曲线的实际数值见 `configs/teacher.yaml` 与 `configs/student.yaml`。
+- [学生配置](configs/student.yaml)使用种子 11、21、31、41、51，训练 300 轮，使用 FP32、批量 64 和 AdamW，权重衰减为 `1e-4`，全局梯度范数裁剪阈值为 1.0。学习率在前 30 轮从 `1e-4` 升至 `1e-3`，随后用 270 轮线性衰减至 0。教师的优化设置见[教师配置](configs/teacher.yaml)。
 - ST-GTP按静态时间均值和动态相邻帧绝对差构造关系；通道归一化后计算平方距离与逐行归一化RBF，使用教师到学生的前向KL。关节阶段分别对两个教师分支计算后按0.5/0.5加权，再累加各阶段；骨流一对一对齐。
-- X1/X2/X2下，教师第二个关节命名分支实际接收骨向量，不能根据名称推断输入。
+- [历史训练配置](https://github.com/zeroling/Lite-MyoNet/tree/e73793f68e14e9e31ebad3005c074de6f83ffa17/configs)记录了学生的批量 16、余弦衰减以及教师的 X1/X2/X2 输入。旧任务续训使用当时的配置。
 - 主配置保存每轮与最佳权重。续跑只要求断点可读且能恢复，不以哈希验证作为门槛。
 
 数据只提供 [格式说明](docs/DATA_FORMAT.md)、[仿真生成与转换](docs/DATA_GENERATION.md)、[Kinect兼容映射](docs/CLINICAL_MAPPING.md)。自行准备 `data/synthetic.npz`，或用环境变量 `LITE_MYONET_DATA_ARCHIVE` 指定本地归档：

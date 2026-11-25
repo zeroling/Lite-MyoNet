@@ -1,7 +1,7 @@
 schema_version: 1
-state_path: runs/matrix/state.json
-resolved_config_dir: runs/matrix/configs
-output_root: runs/matrix/outputs
+state_path: runs/paper-matrix/state.json
+resolved_config_dir: runs/paper-matrix/configs
+output_root: runs/paper-matrix/outputs
 device: cuda
 archive_env: LITE_MYONET_DATA_ARCHIVE
 archive_path: data/synthetic.npz

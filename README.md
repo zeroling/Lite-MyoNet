@@ -14,11 +14,11 @@ python -m pip install -e ".[data,export,visualization,test]"
 
 ## Models and training
 
-- Teacher: full width, eight heads, three streams with X1/X2/X2 inputs, seed 2026.
+- Teacher: full width, eight heads, seed 2026. The three streams use X1/X1/X2: joint coordinates for the spatial and temporal joint branches, and bone vectors for the bone branch.
 - Student: dual joint/bone streams, channels 32/64/128, Fourier D=2, standard three-part skeletal adjacency, learnable bias, dynamic graph, and cosine head.
-- Student seeds: 11, 21, 31, 41, 51. Both trainers default to 300 epochs, FP32, batch 16. Optimizer and scheduler values are explicit in `configs/teacher.yaml` and `configs/student.yaml`.
+- The [student configuration](configs/student.yaml) uses seeds 11, 21, 31, 41, and 51, 300 epochs, FP32, batch size 64, AdamW with weight decay of `1e-4`, and global gradient-norm clipping at 1.0. The learning rate increases from `1e-4` to `1e-3` over the first 30 epochs, then decays linearly to zero over the remaining 270 epochs. The [teacher configuration](configs/teacher.yaml) records the teacher's separate optimization settings.
 - ST-GTP uses static time averages and dynamic adjacent-time absolute differences, channel normalization, squared distances, row-normalized RBF affinity, and forward teacher-to-student KL. Teacher branch losses are computed separately, weighted 0.5/0.5 for each joint stage, and summed across stages; the bone stream is aligned one-to-one.
-- The teacher's joint-temporal *named* branch receives bone vectors under X1/X2/X2. Final features are not inferred from stream names.
+- The [historical training configuration](https://github.com/zeroling/Lite-MyoNet/tree/e73793f68e14e9e31ebad3005c074de6f83ffa17/configs) records batch size 16 and cosine decay for the student, and X1/X2/X2 for the teacher. Use the original configuration when resuming a historical run.
 - The main configuration saves per-epoch weights as well as selected weights. Resume accepts readable compatible checkpoints without hash-verification gates.
 
 Place your own packed archive at `data/synthetic.npz` (or set `LITE_MYONET_DATA_ARCHIVE`). See [data schemas](docs/DATA_FORMAT.md), [simulation and conversion](docs/DATA_GENERATION.md), and [clinical mapping](docs/CLINICAL_MAPPING.md). Then run:

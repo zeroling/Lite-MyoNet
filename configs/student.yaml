@@ -17,7 +17,8 @@ seeds:
 deterministic: true
 selection_metric: accuracy
 epochs: 300
-batch_size: 16
+batch_size: 64
+grad_clip_norm: 1.0
 num_workers: 0
 precision: fp32
 model:
@@ -56,6 +57,5 @@ scheduler:
   warmup_init_lr: 0.0001
   warmup_gamma: 1.0
   decay_gamma: 1.0
-  type: warmup_cosine
-  min_lr: 1.0e-06
+  type: warmup_linear
 save_epoch_weights: true
